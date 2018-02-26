@@ -1,6 +1,12 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+if executable('stack')
+  let s:hoogle_command="stack exec -- hoogle"
+else
+  let s:hoogle_command="hoogle"
+endif
+
 let s:unite_source = {
       \ 'name': 'haskellimport',
       \ 'max_candidates': 30,
@@ -35,7 +41,8 @@ endif
 " there are some lines filtered out by the sed command.
 function! s:hoogle(input) abort
   return s:system(
-        \ 'hoogle --verbose --count 100 ' . shellescape(a:input)
+        \ s:hoogle_command
+        \.' --verbose --count 100 ' . shellescape(a:input)
         \.' | sed -e "/^= ANSWERS =/d" -e "/^No results found/d" -e "/^keyword/d" -e "/^package/d" -e "/^module/d" -e "/^Query:/d" -e "s/  -- [+a-zA-Z]*$//g"'
         \.' | head -n 30')
 endfunction
@@ -66,7 +73,9 @@ function! s:unite_source.gather_candidates(args, context) abort
 endfunction
 
 function! unite#sources#haskellimport#define() abort
-  return executable('hoogle') ? s:unite_source : []
+  return s:unite_source
+  "return executable('hoogle') ? s:unite_source : []
+  "executableでなかった場合は黙って死なずにエラーを出して欲しい
 endfunction
 
 let &cpo = s:save_cpo
